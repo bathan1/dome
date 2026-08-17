@@ -4,3 +4,4 @@
 //! reusable operating-system integrations into modules like this one.
 
 pub mod clipboard;
+pub mod installer;

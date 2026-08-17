@@ -36,12 +36,13 @@ fn run() -> io::Result<()> {
 /// `join_arguments_text(arguments)` joins each text entry in ARGUMENTS with a space to rebuild
 /// the original text.
 fn join_arguments_text<It>(arguments: It) -> Option<String>
-where It: Iterator<Item = String>
+where
+    It: Iterator<Item = String>,
 {
     let arguments: Vec<String> = arguments.collect();
-    return match arguments.as_slice() {
+    match arguments.as_slice() {
         [] => None,
-        xs @ [..] => Some (xs.join(" "))
+        xs @ [..] => Some(xs.join(" ")),
     }
 }
 

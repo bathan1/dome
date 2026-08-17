@@ -1,0 +1,4 @@
+interface:
+  display_name: "ClipMe"
+  short_description: "Copy generated text to the Windows clipboard"
+  default_prompt: "Use $clipme to copy this text to my clipboard."
