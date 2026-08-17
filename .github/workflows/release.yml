@@ -34,10 +34,11 @@ jobs:
           strip target/release/dome target/release/clipme
           install -m 0755 target/release/dome dist/dome-x86_64-unknown-linux-gnu
           install -m 0755 target/release/clipme dist/clipme-x86_64-unknown-linux-gnu
+          install -m 0755 install.sh dist/install.sh
           install -m 0644 skills/clipme/SKILL.md dist/clipme-SKILL.md
           install -m 0644 skills/clipme/agents/openai.yaml dist/clipme-openai.yaml
           cd dist
-          sha256sum dome-x86_64-unknown-linux-gnu clipme-x86_64-unknown-linux-gnu clipme-SKILL.md clipme-openai.yaml > SHA256SUMS
+          sha256sum dome-x86_64-unknown-linux-gnu clipme-x86_64-unknown-linux-gnu install.sh clipme-SKILL.md clipme-openai.yaml > SHA256SUMS
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -46,6 +47,7 @@ jobs:
           files: |
             dist/dome-x86_64-unknown-linux-gnu
             dist/clipme-x86_64-unknown-linux-gnu
+            dist/install.sh
             dist/clipme-SKILL.md
             dist/clipme-openai.yaml
             dist/SHA256SUMS

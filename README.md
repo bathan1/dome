@@ -9,23 +9,24 @@ The published binaries currently target x86-64 Linux/WSL. `clipme` requires
 
 ## Install Dome
 
-Download the latest `dome` release and verify it before installing:
+Install the latest release with either `curl`:
 
 ```sh
-release_dir="$(mktemp -d)"
-curl --fail --location \
-  --output "$release_dir/dome-x86_64-unknown-linux-gnu" \
-  https://github.com/bathan1/dome/releases/latest/download/dome-x86_64-unknown-linux-gnu
-curl --fail --location \
-  --output "$release_dir/SHA256SUMS" \
-  https://github.com/bathan1/dome/releases/latest/download/SHA256SUMS
-(cd "$release_dir" && sha256sum --check --ignore-missing SHA256SUMS)
-install -Dm755 "$release_dir/dome-x86_64-unknown-linux-gnu" \
-  "${CARGO_HOME:-$HOME/.cargo}/bin/dome"
+curl --proto '=https' --tlsv1.2 -fsSL https://github.com/bathan1/dome/releases/latest/download/install.sh | sh
 ```
 
-Make sure `${CARGO_HOME:-$HOME/.cargo}/bin` is on the `PATH` inherited by the
-agent process, not only an interactive shell.
+or `wget`:
+
+```sh
+wget -qO- https://github.com/bathan1/dome/releases/latest/download/install.sh | sh
+```
+
+The installer downloads the `dome` binary from the latest GitHub release,
+verifies it against that release's `SHA256SUMS`, and installs it to
+`${CARGO_HOME:-$HOME/.cargo}/bin`. Set `DOME_INSTALL_DIR` to use a different
+directory, or `DOME_VERSION` to install a specific tag. Make sure the selected
+directory is on the `PATH` inherited by the agent process, not only an
+interactive shell.
 
 Then install ClipMe and its agent skills:
 
@@ -108,8 +109,8 @@ cargo install --path . --locked --bin clipme
 
 ## Publish a release
 
-The release workflow builds, tests, and publishes both binaries plus
-`SHA256SUMS` whenever a semantic version tag is pushed:
+The release workflow builds, tests, and publishes both binaries, the one-line
+installer, and `SHA256SUMS` whenever a semantic version tag is pushed:
 
 ```console
 git tag v0.1.0
