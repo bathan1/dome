@@ -1,6 +1,6 @@
 [package]
 name = "dome"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Small do-me command-line actions for agentic workflows"
 repository = "https://github.com/bathan1/dome"

@@ -1,13 +1,17 @@
 //! Install Dome binaries and their agent skills.
 
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command as ProcessCommand;
 
 use console::Style;
-use dialoguer::{Input, MultiSelect, theme::ColorfulTheme};
+use dialoguer::{
+    Input, MultiSelect,
+    theme::{ColorfulTheme, Theme},
+};
 use sha2::{Digest, Sha256};
 
 const GITHUB_REPOSITORY: &str = "bathan1/dome";
@@ -21,6 +25,58 @@ const CLIPME_OPENAI_YAML: &str = include_str!("../skills/clipme/agents/openai.ya
 struct ReleaseSkill {
     markdown: String,
     openai_yaml: String,
+}
+
+#[derive(Default)]
+struct AgentSelectionTheme {
+    base: ColorfulTheme,
+}
+
+impl Theme for AgentSelectionTheme {
+    fn format_multi_select_prompt(&self, f: &mut dyn fmt::Write, prompt: &str) -> fmt::Result {
+        self.base.format_multi_select_prompt(f, prompt)
+    }
+
+    fn format_multi_select_prompt_selection(
+        &self,
+        f: &mut dyn fmt::Write,
+        prompt: &str,
+        selections: &[&str],
+    ) -> fmt::Result {
+        self.base
+            .format_multi_select_prompt_selection(f, prompt, selections)
+    }
+
+    fn format_multi_select_prompt_item(
+        &self,
+        f: &mut dyn fmt::Write,
+        text: &str,
+        checked: bool,
+        active: bool,
+    ) -> fmt::Result {
+        if active {
+            write!(
+                f,
+                "{} ",
+                Style::new().for_stderr().cyan().bold().apply_to("❯")
+            )?;
+        } else {
+            write!(f, "  ")?;
+        }
+
+        let checkbox = if checked {
+            &self.base.checked_item_prefix
+        } else {
+            &self.base.unchecked_item_prefix
+        };
+        let item = if active {
+            self.base.active_item_style.apply_to(text)
+        } else {
+            self.base.inactive_item_style.apply_to(text)
+        };
+
+        write!(f, "{checkbox} {item}")
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -174,7 +230,7 @@ fn add(binary: &str, environment: &Environment) -> io::Result<()> {
 
     let agents = [Agent::Codex, Agent::ClaudeCode];
     let labels: Vec<_> = agents.iter().map(|agent| agent.label()).collect();
-    let selected = MultiSelect::with_theme(&ColorfulTheme::default())
+    let selected = MultiSelect::with_theme(&AgentSelectionTheme::default())
         .with_prompt(format!("Install the {binary} skill for"))
         .items(&labels)
         .interact()
@@ -556,6 +612,25 @@ mod tests {
         assert!(Command::parse(["update", "clipme"].map(String::from).into_iter()).is_err());
         assert!(Command::parse(["add", "unknown"].map(String::from).into_iter()).is_err());
         assert!(Command::parse(["add"].map(String::from).into_iter()).is_err());
+    }
+
+    #[test]
+    fn agent_selection_cursor_stays_visible_for_checked_items() {
+        let theme = AgentSelectionTheme::default();
+
+        for checked in [false, true] {
+            let mut active = String::new();
+            theme
+                .format_multi_select_prompt_item(&mut active, "Codex", checked, true)
+                .unwrap();
+            assert!(console::strip_ansi_codes(&active).starts_with("❯ "));
+
+            let mut inactive = String::new();
+            theme
+                .format_multi_select_prompt_item(&mut inactive, "Codex", checked, false)
+                .unwrap();
+            assert!(console::strip_ansi_codes(&inactive).starts_with("  "));
+        }
     }
 
     #[test]

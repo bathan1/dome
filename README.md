@@ -113,8 +113,8 @@ The release workflow builds, tests, and publishes both binaries, the one-line
 installer, and `SHA256SUMS` whenever a semantic version tag is pushed:
 
 ```console
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The GitHub repository must be public before unauthenticated `dome add` requests
