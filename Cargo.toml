@@ -1,0 +1,8 @@
+[package]
+name = "dome"
+version = "0.1.0"
+edition = "2024"
+description = "Small do-me command-line actions for agentic workflows"
+
+[dependencies]
+
