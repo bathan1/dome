@@ -1,116 +1,120 @@
 # dome (`do-me`)
 
-`dome` is a collection of small, agent-friendly commands named as actions:
-`clipme`, and eventually any other `*me` workflows that earn a place here.
+`dome` is a small installer and a collection of agent-friendly action commands.
+The first action is `clipme`, which copies exact UTF-8 text from WSL to the
+Windows clipboard.
 
-The first action, `clipme`, is the learning exercise. Its requirements, process
-setup, UTF-8 PowerShell script, tests, and less-discoverable standard-library
-helpers are provided. You fill in the two `todo!()` checkpoints that connect
-the pieces.
+The published binaries currently target x86-64 Linux/WSL. `clipme` requires
+`powershell.exe` to be reachable from WSL.
 
-## The `clipme` assignment
+## Install Dome
 
-Implement these behaviors:
+Download the latest `dome` release and verify it before installing:
 
-1. When arguments are present, join them with a single space and copy that
-   text. Explicit arguments win even in a non-interactive agent process.
-2. With no arguments and piped stdin, copy stdin exactly without adding a
-   newline.
-3. With no arguments in an interactive terminal, return a useful error instead
-   of unexpectedly clearing the clipboard.
-4. Start `powershell.exe`, stream the input bytes to its stdin, close the pipe,
-   wait for it, and turn a failed exit status into a Rust error.
-5. Keep the PowerShell input encoding explicitly set to BOM-less UTF-8.
-
-Start with the tests. They intentionally fail at `HOMEWORK 1`:
-
-```console
-cargo test --bin clipme
+```sh
+release_dir="$(mktemp -d)"
+curl --fail --location \
+  --output "$release_dir/dome-x86_64-unknown-linux-gnu" \
+  https://github.com/bathan1/dome/releases/latest/download/dome-x86_64-unknown-linux-gnu
+curl --fail --location \
+  --output "$release_dir/SHA256SUMS" \
+  https://github.com/bathan1/dome/releases/latest/download/SHA256SUMS
+(cd "$release_dir" && sha256sum --check --ignore-missing SHA256SUMS)
+install -Dm755 "$release_dir/dome-x86_64-unknown-linux-gnu" \
+  "${CARGO_HOME:-$HOME/.cargo}/bin/dome"
 ```
 
-Search `src` for the work sites:
+Make sure `${CARGO_HOME:-$HOME/.cargo}/bin` is on the `PATH` inherited by the
+agent process, not only an interactive shell.
+
+Then install ClipMe and its agent skills:
 
 ```console
-rg 'HOMEWORK|todo!' src
+dome add clipme
 ```
 
-After implementing both checkpoints, format, test, lint, and try both input
-styles:
-
-```console
-cargo fmt
-cargo test
-cargo clippy --all-targets -- -D warnings
-cargo build --bin clipme
-target/debug/clipme 'hello, 世界 👋'
-printf '%s' 'hello, 世界 👋' | target/debug/clipme
-```
-
-Arguments are joined with a single space, matching the useful behavior of
-zsh's `"$*"`. For multiline text, leading/trailing whitespace, or shell-special
-characters, pipe the exact bytes on stdin. `clipme` does not append a newline.
-
-Only install it for agents after your implementation passes:
-
-```console
-cargo install --path . --bin clipme
-command -v clipme
-```
-
-Cargo normally installs it as `$CARGO_HOME/bin/clipme` (usually
-`~/.cargo/bin/clipme`). That directory must be on the `PATH` inherited by the
-agent process—not only added inside an interactive-only zsh configuration.
-
-Then an agent can be told simply:
-
-> Write the release notes to `clipme`.
-
-The most robust generated command is a byte-preserving stdin pipe into the
-binary; the binary owns the Windows/UTF-8 details.
-
-## How the project is organized
+`dome add` downloads and verifies the latest ClipMe release, installs it into
+`${CARGO_HOME:-$HOME/.cargo}/bin`, and opens an interactive multi-select for
+agent integrations. The current choices are Codex and Claude Code. For every
+selected agent, Dome prompts for a skills root and defaults to:
 
 ```text
-Cargo.toml                 package metadata
-src/lib.rs                 shared code exported by the `dome` crate
-src/clipboard.rs           HOMEWORK 2 and reusable clipboard integration
-src/bin/clipme.rs          HOMEWORK 1 and the `clipme` CLI behavior
+Codex:       ~/.agents/skills
+Claude Code: ~/.claude/skills
 ```
 
-Every Rust file directly under `src/bin/` becomes a separate executable. If
-you add `src/bin/slugme.rs`, Cargo automatically gives you these commands:
+The resulting skill is installed below that root as `clipme/SKILL.md`. Running
+the same command again is safe: the binary and Dome-managed skills are updated
+only to the latest published content. Dome refuses to overwrite a different,
+unmanaged skill.
+
+Remove the binary and every Dome-managed skill recorded for it with:
 
 ```console
-cargo run --bin slugme
-cargo build --release --bin slugme
-cargo install --path . --bin slugme
+dome remove clipme
 ```
 
-Code shared by several commands belongs under `src/` and is exported from
-`src/lib.rs`. Keeping the thin user interface in `src/bin` and the mechanism in
-the library also makes the mechanism easier to test.
+Removal is also idempotent and leaves unmanaged files alone.
 
-The source demonstrates standard-library pieces that are otherwise hard to
-guess on day one: `IsTerminal` distinguishes a terminal from a pipeline;
-`Cursor` makes in-memory UTF-8 bytes implement `Read`; generic `impl Read`
-accepts stdin, files, and memory without knowing the concrete type; `Command`
-and `Stdio::piped` create a child process with a writable pipe; `io::copy`
-handles partial reads and writes; and `ExitCode` lets `main` report failure
-without terminating from inside reusable code.
+## Install ClipMe manually
 
-## What happens during a build
+ClipMe remains independently installable from the same release:
 
-1. Cargo reads `Cargo.toml`, discovers the library and every file in `src/bin`.
-2. `rustc` compiles `src/lib.rs` as the reusable `dome` crate.
-3. `rustc` compiles `clipme.rs` and links it against that crate.
-4. A debug build lands at `target/debug/clipme`. `todo!()` is valid Rust, so the
-   starter compiles, but execution panics if it reaches unfinished homework.
-5. `cargo build --release` recompiles with optimizations and places the smaller,
-   faster binary at `target/release/clipme`.
-6. `cargo install --path . --bin clipme` performs a release build and copies the
-   resulting executable to Cargo's user-level binary directory.
+```sh
+release_dir="$(mktemp -d)"
+curl --fail --location \
+  --output "$release_dir/clipme-x86_64-unknown-linux-gnu" \
+  https://github.com/bathan1/dome/releases/latest/download/clipme-x86_64-unknown-linux-gnu
+curl --fail --location \
+  --output "$release_dir/SHA256SUMS" \
+  https://github.com/bathan1/dome/releases/latest/download/SHA256SUMS
+(cd "$release_dir" && sha256sum --check --ignore-missing SHA256SUMS)
+install -Dm755 "$release_dir/clipme-x86_64-unknown-linux-gnu" \
+  "${CARGO_HOME:-$HOME/.cargo}/bin/clipme"
+```
 
-The Rust binary still delegates the final clipboard call to `powershell.exe`,
-because the destination is the Windows clipboard. It passes text over stdin,
-sets PowerShell's input encoding to BOM-less UTF-8, closes the pipe to signal
-EOF, waits for PowerShell, and returns a failure exit status if anything fails.
+Use arguments for convenient one-line text:
+
+```console
+clipme 'hello, 世界 👋'
+```
+
+Use standard input for exact or multiline bytes. ClipMe does not append a
+newline:
+
+```console
+printf '%s' 'hello, 世界 👋' | clipme
+```
+
+Arguments take precedence over standard input. Calling `clipme` with no
+arguments from an interactive terminal returns an error instead of clearing the
+clipboard.
+
+## Build from source
+
+```console
+cargo fmt --all --check
+cargo test --all-targets --locked
+cargo clippy --all-targets --locked -- -D warnings
+cargo build --release --locked --bins
+```
+
+Install either binary from a checkout:
+
+```console
+cargo install --path . --locked --bin dome
+cargo install --path . --locked --bin clipme
+```
+
+## Publish a release
+
+The release workflow builds, tests, and publishes both binaries plus
+`SHA256SUMS` whenever a semantic version tag is pushed:
+
+```console
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The GitHub repository must be public before unauthenticated `dome add` requests
+can download its release assets.

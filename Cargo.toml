@@ -3,6 +3,10 @@ name = "dome"
 version = "0.1.0"
 edition = "2024"
 description = "Small do-me command-line actions for agentic workflows"
+repository = "https://github.com/bathan1/dome"
+license = "MIT"
 
 [dependencies]
-
+console = "0.15.11"
+dialoguer = "0.11.0"
+sha2 = "0.10.9"

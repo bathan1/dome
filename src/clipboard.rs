@@ -37,11 +37,11 @@ pub fn copy_to_windows_clipboard(input: impl Read) -> io::Result<()> {
     let stream_result = stream_to_child(input, child_stdin);
     let wait_result = child.wait();
     match stream_result {
-        Err(error) => return Err(error),
+        Err(error) => Err(error),
         Ok(()) => match wait_result {
-            Err(error) => return Err(error),
-            Ok(status) => successful_status(status)
-        }
+            Err(error) => Err(error),
+            Ok(status) => successful_status(status),
+        },
     }
 }
 
