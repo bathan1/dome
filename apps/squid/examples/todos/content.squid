@@ -1,0 +1,2 @@
+# Todos
+- Todos total count: {SELECT COUNT(*) FROM todos}

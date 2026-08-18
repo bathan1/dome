@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SQUID",
+  "scopeName": "text.html.markdown.squid",
+  "patterns": [
+    {
+      "include": "#sql-block"
+    },
+    {
+      "include": "text.html.markdown"
+    }
+  ],
+  "repository": {
+    "sql-block": {
+      "name": "meta.embedded.block.sql.squid",
+      "contentName": "meta.embedded.block.sql.squid",
+      "begin": "^(\\s*)(\\{)",
+      "beginCaptures": {
+        "2": {
+          "name": "punctuation.section.embedded.begin.squid"
+        }
+      },
+      "end": "(\\})(\\s*)$",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.embedded.end.squid"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.sql"
+        }
+      ]
+    }
+  }
+}

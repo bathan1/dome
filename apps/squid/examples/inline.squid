@@ -1,0 +1,34 @@
+# Inlining SQL results
+You can *inline* text content similar to JSX. In JSX, we could print a dynamic greeting like so:
+
+```jsx
+<span>Hello {username}</span>
+```
+
+You can tell `squid` to output inline text using scalar SQL braces in a similar fashion like so:
+
+```md
+Hello **{SELECT username FROM users WHERE age > 21}**!
+```
+
+This outputs:
+
+Hello **{SELECT username FROM users WHERE age > 21}**!
+
+Your query must select exactly *1 column* and *1 row*. If you try to select more than 1 column or 1 row:
+
+```md
+Hello **{SELECT user_id, username, age FROM users WHERE age > 20}**!
+Hello **{SELECT username FROM users WHERE age > 20}**!
+Hello **{SELECT user_id, username, age FROM users WHERE age > 20}**!
+```
+
+Then `squid` will throw an error.
+
+If you want to format multiple values inline as plain-text, then use an aggregate like `GROUP_CONCAT()`:
+
+```md
+Hello {SELECT GROUP_CONCAT('**' || username || '**', ', ') FROM users;}!
+```
+
+Hello {SELECT GROUP_CONCAT('**' || username || '**', ', ') FROM users;}!

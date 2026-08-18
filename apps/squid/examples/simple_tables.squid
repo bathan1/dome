@@ -1,0 +1,25 @@
+# Simple Tables
+We can generate markdown tables using the `{| |}` braces.
+
+For example, we can output a table with the query:
+
+```md
+{|SELECT username FROM users WHERE age < 22|}
+```
+
+This outputs:
+
+{| SELECT username FROM users WHERE age < 22 |}
+
+Here is *another*:
+
+```md
+{|
+    SELECT formula_id, formula, time_us_blue3
+    FROM benchmarks
+    WHERE time_us_blue3 = (
+        SELECT MIN(time_us_blue3) FROM benchmarks
+    )
+    LIMIT 5;
+|}
+```

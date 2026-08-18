@@ -1,0 +1,13 @@
+[package]
+name = "dome"
+version.workspace = true
+edition.workspace = true
+description = "Install and manage the binaries in the Dome suite"
+repository.workspace = true
+license.workspace = true
+readme = "README.md"
+
+[dependencies]
+console = "0.15.11"
+dialoguer = "0.11.0"
+sha2 = "0.10.9"

@@ -1,0 +1,43 @@
+{
+  "name": "squid-language",
+   "repository": {
+    "type": "git",
+    "url": "https://github.com/bathan1/dome.git"
+  },
+  "displayName": "SQUID Language Support",
+  "description": "Markdown highlighting with brace-delimited SQL blocks.",
+  "version": "0.1.0",
+  "publisher": "squid",
+  "license": "Unlicense",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "squid",
+        "aliases": [
+          "SQUID",
+          "SQL to UI Markdown"
+        ],
+        "extensions": [
+          ".squid"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "squid",
+        "scopeName": "text.html.markdown.squid",
+        "path": "./syntaxes/squid.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.sql.squid": "sql"
+        }
+      }
+    ]
+  }
+}

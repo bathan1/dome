@@ -1,0 +1,8 @@
+[package]
+name = "clipme"
+version.workspace = true
+edition.workspace = true
+description = "Copy exact UTF-8 text from WSL to the Windows clipboard"
+repository.workspace = true
+license.workspace = true
+readme = "README.md"

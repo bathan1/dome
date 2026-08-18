@@ -1,0 +1,24 @@
+[package]
+name = "squidown"
+version = "0.2.0-alpha.1"
+edition = "2024"
+description = "Render SQL to UI Markdown documents"
+license = "Unlicense"
+repository = "https://github.com/bathan1/dome"
+homepage = "https://github.com/bathan1/dome/tree/main/apps/squid"
+readme = "README.md"
+keywords = ["markdown", "sqlite", "sql", "report", "cli"]
+categories = ["command-line-utilities", "template-engine"]
+
+[[bin]]
+name = "squid"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+mysql = "28.0.0"
+postgres = "0.19.14"
+pulldown-cmark = "0.13.4"
+rusqlite = { version = "0.37", features = ["bundled"] }
+url = "2.5"

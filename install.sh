@@ -84,4 +84,4 @@ install -d "$install_directory"
 install -m 0755 "$temporary_directory/$asset" "$install_directory/dome"
 
 printf 'Installed Dome to %s/dome\n' "$install_directory"
-printf 'Next: make sure %s is on PATH, then run: dome add clipme\n' "$install_directory"
+printf 'Next: make sure %s is on PATH, then run dome add clipme or dome add squid\n' "$install_directory"

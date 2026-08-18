@@ -1,0 +1,42 @@
+# Landing page
+You can pass in multiple files into `squid`.
+If you pass in more than 1 file, the `--output` flag
+is required. `squid` can output both `zip` and `tar` gunzip archives of your queries.
+
+```bash
+cd ./examples/multi-page # from repo root
+
+squid ./index.squid ./users.squid ./benchmarks.squid \
+    -o ./content.zip
+```
+
+To specify HTML as the output file format, use the
+`.html.{COMPRESSION_NAME}` file extension to tell `squid` to use
+HTML instead of plain markdown:
+
+```bash
+cd ./examples/multi-page # from repo root
+
+squid ./index.squid ./users.squid ./benchmarks.squid \
+    -o ./content.html.zip
+
+squid ./index.squid ./users.squid ./benchmarks.squid \
+    -o ./content.html.tar.gz
+```
+
+You can also specify a glob pattern instead of
+individually listing out each file:
+
+```bash
+squid ./examples/multi-page/*.squid # from repo root (make this the glob for just at this directory if my glob is wrong)
+squid ./examples/multi-page/**/*.squid # from repo root (make this the recursive glob if my glob is wrong and retains input-dir structure in output)
+```
+
+So we should be able to see this:
+
+{SELECT username FROM users LIMIT 1}
+
+See the other pages:
+
+- [users](./users.squid)
+- [benchmarks](./benchmarks.squid)

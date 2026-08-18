@@ -2,7 +2,7 @@ use std::env;
 use std::io::{self, Cursor, IsTerminal};
 use std::process::ExitCode;
 
-use dome::clipboard::copy_to_windows_clipboard;
+use clipme::clipboard::copy_to_windows_clipboard;
 
 fn main() -> ExitCode {
     match run() {

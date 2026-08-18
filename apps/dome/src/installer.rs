@@ -18,9 +18,9 @@ const GITHUB_REPOSITORY: &str = "bathan1/dome";
 const RELEASE_TARGET: &str = "x86_64-unknown-linux-gnu";
 const MANAGED_MARKER: &str = ".dome-managed";
 #[cfg(test)]
-const CLIPME_SKILL: &str = include_str!("../skills/clipme/SKILL.md");
+const CLIPME_SKILL: &str = include_str!("../../clipme/skill/SKILL.md");
 #[cfg(test)]
-const CLIPME_OPENAI_YAML: &str = include_str!("../skills/clipme/agents/openai.yaml");
+const CLIPME_OPENAI_YAML: &str = include_str!("../../clipme/skill/agents/openai.yaml");
 
 struct ReleaseSkill {
     markdown: String,
@@ -112,10 +112,10 @@ impl Command {
             }
         };
 
-        if binary != "clipme" {
+        if !matches!(binary.as_str(), "clipme" | "squid") {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!("unknown binary `{binary}`; available binaries: clipme"),
+                format!("unknown binary `{binary}`; available binaries: clipme, squid"),
             ));
         }
 
@@ -221,6 +221,10 @@ fn add(binary: &str, environment: &Environment) -> io::Result<()> {
     let release_skill = install_latest_release(binary, &binary_path)?;
     write_state_path(environment, binary, "binary", &binary_path)?;
 
+    let Some(release_skill) = release_skill else {
+        return Ok(());
+    };
+
     if !io::stdin().is_terminal() {
         return Err(io::Error::other(format!(
             "installed {} but agent selection needs an interactive terminal; rerun `dome add {binary}` interactively",
@@ -276,19 +280,21 @@ fn remove(binary: &str, environment: &Environment) -> io::Result<()> {
         recorded_binary.display()
     );
 
-    for agent in [Agent::Codex, Agent::ClaudeCode] {
-        let skill_directory =
-            read_state_path(environment, binary, agent.key())?.unwrap_or_else(|| {
-                expand_home(agent.default_skills_root(), &environment.home)
-                    .expect("built-in paths are valid")
-                    .join(binary)
-            });
-        if remove_managed_skill(binary, &skill_directory)? {
-            println!(
-                "{} {}",
-                Style::new().yellow().apply_to("removed skill:"),
-                skill_directory.display()
-            );
+    if app_has_skill(binary) {
+        for agent in [Agent::Codex, Agent::ClaudeCode] {
+            let skill_directory = read_state_path(environment, binary, agent.key())?
+                .unwrap_or_else(|| {
+                    expand_home(agent.default_skills_root(), &environment.home)
+                        .expect("built-in paths are valid")
+                        .join(binary)
+                });
+            if remove_managed_skill(binary, &skill_directory)? {
+                println!(
+                    "{} {}",
+                    Style::new().yellow().apply_to("removed skill:"),
+                    skill_directory.display()
+                );
+            }
         }
     }
 
@@ -299,7 +305,11 @@ fn remove(binary: &str, environment: &Environment) -> io::Result<()> {
     Ok(())
 }
 
-fn install_latest_release(binary: &str, destination: &Path) -> io::Result<ReleaseSkill> {
+fn app_has_skill(binary: &str) -> bool {
+    binary == "clipme"
+}
+
+fn install_latest_release(binary: &str, destination: &Path) -> io::Result<Option<ReleaseSkill>> {
     let base_url = env::var("DOME_RELEASE_BASE_URL").unwrap_or_else(|_| {
         format!("https://github.com/{GITHUB_REPOSITORY}/releases/latest/download")
     });
@@ -310,7 +320,7 @@ fn install_release_from_base(
     binary: &str,
     destination: &Path,
     base_url: &str,
-) -> io::Result<ReleaseSkill> {
+) -> io::Result<Option<ReleaseSkill>> {
     fs::create_dir_all(destination.parent().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -329,19 +339,23 @@ fn install_release_from_base(
     let result = (|| {
         download(&format!("{base_url}/SHA256SUMS"), &checksums)?;
         download(&format!("{base_url}/{asset}"), &temporary)?;
-        download(&format!("{base_url}/{skill_asset}"), &skill_temporary)?;
-        download(
-            &format!("{base_url}/{openai_yaml_asset}"),
-            &openai_yaml_temporary,
-        )?;
         verify_checksum(&temporary, &checksums, &asset)?;
-        verify_checksum(&skill_temporary, &checksums, &skill_asset)?;
-        verify_checksum(&openai_yaml_temporary, &checksums, &openai_yaml_asset)?;
         set_executable(&temporary)?;
 
-        let release_skill = ReleaseSkill {
-            markdown: fs::read_to_string(&skill_temporary)?,
-            openai_yaml: fs::read_to_string(&openai_yaml_temporary)?,
+        let release_skill = if app_has_skill(binary) {
+            download(&format!("{base_url}/{skill_asset}"), &skill_temporary)?;
+            download(
+                &format!("{base_url}/{openai_yaml_asset}"),
+                &openai_yaml_temporary,
+            )?;
+            verify_checksum(&skill_temporary, &checksums, &skill_asset)?;
+            verify_checksum(&openai_yaml_temporary, &checksums, &openai_yaml_asset)?;
+            Some(ReleaseSkill {
+                markdown: fs::read_to_string(&skill_temporary)?,
+                openai_yaml: fs::read_to_string(&openai_yaml_temporary)?,
+            })
+        } else {
+            None
         };
 
         if files_equal(&temporary, destination)? {
@@ -609,6 +623,10 @@ mod tests {
         assert_eq!(command.operation, Operation::Add);
         assert_eq!(command.binary, "clipme");
 
+        let squid =
+            Command::parse(["add", "squid"].map(String::from).into_iter()).expect("valid command");
+        assert_eq!(squid.binary, "squid");
+
         assert!(Command::parse(["update", "clipme"].map(String::from).into_iter()).is_err());
         assert!(Command::parse(["add", "unknown"].map(String::from).into_iter()).is_err());
         assert!(Command::parse(["add"].map(String::from).into_iter()).is_err());
@@ -735,8 +753,27 @@ mod tests {
         let first = install_release_from_base("clipme", &destination, &base_url).unwrap();
         let second = install_release_from_base("clipme", &destination, &base_url).unwrap();
         assert_eq!(fs::read(destination).unwrap(), b"published clipme");
-        assert_eq!(first.markdown, CLIPME_SKILL);
-        assert_eq!(second.openai_yaml, CLIPME_OPENAI_YAML);
+        assert_eq!(first.unwrap().markdown, CLIPME_SKILL);
+        assert_eq!(second.unwrap().openai_yaml, CLIPME_OPENAI_YAML);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn release_installation_supports_apps_without_skills() {
+        let root = temporary_directory("release-without-skill");
+        let release = root.join("release");
+        let destination = root.join("bin/squid");
+        let asset = format!("squid-{RELEASE_TARGET}");
+        fs::create_dir_all(&release).unwrap();
+        fs::write(release.join(&asset), b"published squid").unwrap();
+        let digest = Sha256::digest(b"published squid");
+        fs::write(release.join("SHA256SUMS"), format!("{digest:x}  {asset}\n")).unwrap();
+        let base_url = format!("file://{}", release.display());
+
+        let skill = install_release_from_base("squid", &destination, &base_url).unwrap();
+        assert!(skill.is_none());
+        assert_eq!(fs::read(destination).unwrap(), b"published squid");
 
         fs::remove_dir_all(root).unwrap();
     }
